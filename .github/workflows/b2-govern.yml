@@ -9,7 +9,7 @@
 # waiting for a reviewer while no case is active. Arming needs no commit and no new dispatch tag.
 # Nothing is deployed; the deployment record is synthetic evidence only.
 name: b2-govern
-run-name: b2-govern ${{ github.event_name }} ${{ github.ref_name }} ${{ github.run_id }}
+run-name: ${{ inputs.helio_execution_id || github.run_id }}
 
 on:
   push:
@@ -17,8 +17,20 @@ on:
     paths: ['b2-govern/**', '.github/workflows/b2-govern.yml']
   schedule:
     - cron: '7,37 * * * *'
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        required: false
+        default: b2-govern-test
+        options: [b2-govern-test]
+      helio_execution_id:
+        type: string
+        required: false
+        default: ''
 
+# W3 dispatch contract (environment + helio_execution_id inputs, run-name echo) so Helio can bind the pipeline;
+# GitHub-started push/schedule runs are what the adoption cases observe.
 permissions:
   contents: read
   deployments: write
