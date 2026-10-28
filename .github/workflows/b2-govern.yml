@@ -46,10 +46,12 @@ jobs:
     steps:
       - name: Synthetic build
         shell: bash
+        env:
+          SLEEP_SECONDS: ${{ vars.B2_GOVERN_BUILD_SLEEP || '30' }}
         run: |
           set -euo pipefail
           echo "b2-govern build: event=$GITHUB_EVENT_NAME ref=$GITHUB_REF_NAME run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT armed=${{ vars.B2_GOVERN_ARMED }}"
-          sleep 30
+          sleep "$SLEEP_SECONDS"
   deploy-test:
     needs: build
     if: ${{ vars.B2_GOVERN_ARMED == 'true' }}
