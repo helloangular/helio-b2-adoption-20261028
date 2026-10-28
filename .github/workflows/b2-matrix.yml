@@ -1,0 +1,30 @@
+# B2 (qa227): unsupported-topology fixture for TC-221 — a matrix job targeting an environment.
+# Push-triggered on main only (paths b2-matrix/**). Helio must refuse ordinary adoption with a
+# diagnosable reason; this workflow is never dispatched by Helio.
+name: b2-matrix
+run-name: b2-matrix ${{ github.event_name }} ${{ github.run_id }}
+
+on:
+  push:
+    branches: [main]
+    paths: ['b2-matrix/**', '.github/workflows/b2-matrix.yml']
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    strategy:
+      matrix:
+        region: [east, west]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: b2-observe-test
+    steps:
+      - name: Synthetic matrix deployment (${{ matrix.region }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "b2-matrix ${{ matrix.region }}"
+          sleep 10

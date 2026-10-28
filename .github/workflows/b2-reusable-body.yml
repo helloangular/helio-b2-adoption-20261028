@@ -1,0 +1,24 @@
+# B2 (qa227): reusable body called by b2-reusable.yml (TC-221 unsupported-reusable variant).
+name: b2-reusable-body
+
+on:
+  workflow_call:
+    inputs:
+      target:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.target }}
+    steps:
+      - shell: bash
+        run: |
+          set -euo pipefail
+          echo "b2-reusable-body deploy to ${{ inputs.target }}"
+          sleep 10

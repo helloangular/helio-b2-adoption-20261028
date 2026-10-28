@@ -1,0 +1,110 @@
+# B2 (qa227, 28 Oct 2026): Helio-dispatched provider-managed release workflow (test -> production).
+#
+# Helio dispatches this workflow from the pinned tag helio/workflow/<sha>; every push to this repository
+# is tagged in the same step by agents/b2/lane.py. Used for the closed-release follow-up cases
+# (TC-225..228, TC-283), GitHub-side cancellation (TC-297), observe-only approval (TC-100/101) and the
+# re-run-while-observing case (TC-10). Both environments have Helio's technical reviewer as their only
+# required reviewer. Behaviour switches are repository variables so a fault needs no commit:
+# B2_PROVIDER_TEST_MODE (fail | timeout), B2_PROVIDER_TEST_SLEEP (seconds, default 40).
+# The production job records one synthetic GitHub deployment; no application is deployed.
+name: b2-provider
+run-name: ${{ inputs.helio_execution_id || github.run_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        required: false
+        default: b2-provider-test
+        options: [b2-provider-test, b2-provider-production]
+      helio_execution_id:
+        type: string
+        required: false
+        default: ''
+      helio_release_id:
+        type: string
+        required: false
+        default: ''
+      helio_stage_id:
+        type: string
+        required: false
+        default: ''
+      workflow_revision:
+        type: string
+        required: false
+        default: ''
+      release_version:
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: b2-provider-${{ inputs.helio_execution_id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ vars.B2_PROVIDER_TEST_MODE == 'timeout' && 1 || 10 }}
+    environment: b2-provider-test
+    steps:
+      - name: Synthetic test work
+        shell: bash
+        env:
+          MODE: ${{ vars.B2_PROVIDER_TEST_MODE }}
+          SLEEP_SECONDS: ${{ vars.B2_PROVIDER_TEST_SLEEP || '40' }}
+        run: |
+          set -euo pipefail
+          echo "b2-provider test: run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT"
+          if [ "$MODE" = "timeout" ]; then sleep 150; fi
+          sleep "$SLEEP_SECONDS"
+          if [ "$MODE" = "fail" ]; then echo "B2_PROVIDER_TEST_MODE=fail: synthetic test failure"; exit 1; fi
+          echo "synthetic tests passed"
+
+  production:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: b2-provider-production
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Record synthetic deployment evidence
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_ENVIRONMENT: b2-provider-production
+          HELIO_EXECUTION_ID: ${{ inputs.helio_execution_id }}
+          HELIO_RELEASE_ID: ${{ inputs.helio_release_id }}
+          WORKFLOW_REVISION: ${{ inputs.workflow_revision }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
+        run: |
+          set -euo pipefail
+          sleep 10
+          python3 - <<'PY'
+          import hashlib, json, os, re, uuid
+          uuid.UUID(os.environ["HELIO_RELEASE_ID"])
+          assert re.fullmatch(r"[A-Za-z0-9._:-]{1,200}", os.environ["HELIO_EXECUTION_ID"])
+          revision = os.environ["WORKFLOW_REVISION"] or os.environ["GITHUB_SHA"]
+          assert revision == os.environ["GITHUB_SHA"], "workflow_revision must equal the executing commit"
+          body = json.dumps({"application": "b2-provider", "version": os.environ["RELEASE_VERSION"],
+                             "commit": os.environ["GITHUB_SHA"], "attempt": os.environ["GITHUB_RUN_ATTEMPT"]}, sort_keys=True).encode()
+          digest = "sha256:" + hashlib.sha256(body).hexdigest()
+          payload = {"schema_version": 1, "helio_execution_id": os.environ["HELIO_EXECUTION_ID"],
+                     "release_id": os.environ["HELIO_RELEASE_ID"], "artifact_digest": digest,
+                     "artifact_uri": "urn:b2-provider@" + digest,
+                     "rollback_workflow_id": ".github/workflows/b2-provider.yml", "workflow_revision": revision}
+          json.dump({"ref": os.environ["GITHUB_SHA"], "auto_merge": False, "required_contexts": [],
+                     "environment": os.environ["TARGET_ENVIRONMENT"], "task": "helio-forward-release",
+                     "payload": payload}, open("deployment-evidence.json", "w"))
+          print("deploying", digest)
+          PY
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          deployment_id="$(curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$api/deployments" --data @deployment-evidence.json | python3 -c 'import json,sys;print(json.load(sys.stdin)["id"])')"
+          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "$api/deployments/$deployment_id/statuses" --data '{"state":"success","description":"Synthetic deployment evidence; no application deployed"}' > /dev/null

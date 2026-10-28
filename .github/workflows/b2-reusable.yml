@@ -1,0 +1,30 @@
+# B2 (qa227): unsupported-topology fixture for TC-221 — a caller that uses a reusable workflow
+# (b2-reusable-body.yml) for its environment job. Push-triggered on main only (paths b2-reusable/**).
+# Helio must refuse ordinary adoption with a diagnosable reason; never dispatched by Helio.
+name: b2-reusable
+run-name: b2-reusable ${{ github.event_name }} ${{ github.run_id }}
+
+on:
+  push:
+    branches: [main]
+    paths: ['b2-reusable/**', '.github/workflows/b2-reusable.yml', '.github/workflows/b2-reusable-body.yml']
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - shell: bash
+        run: |
+          set -euo pipefail
+          echo "b2-reusable build"
+          sleep 10
+  deploy:
+    needs: build
+    uses: ./.github/workflows/b2-reusable-body.yml
+    with:
+      target: b2-observe-test

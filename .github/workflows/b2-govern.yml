@@ -1,0 +1,56 @@
+# B2 (qa227, 28 Oct 2026): GitHub-started run fixture for "Govern existing environment promotions" adoption.
+#
+# Fires on push (main, feature/**) and on a 30-minute schedule. The deploy job targets b2-govern-test,
+# whose only required reviewer is Helio's technical reviewer (helio-release-reviewer), so a run adopted
+# under a governed policy waits at GitHub's hold until Helio's native gate is signed.
+#
+# The deploy job runs only while the repository variable B2_GOVERN_ARMED is "true". Unarmed scheduled
+# runs build and finish without touching the environment, so the seeded schedule cannot pile up runs
+# waiting for a reviewer while no case is active. Arming needs no commit and no new dispatch tag.
+# Nothing is deployed; the deployment record is synthetic evidence only.
+name: b2-govern
+run-name: b2-govern ${{ github.event_name }} ${{ github.ref_name }} ${{ github.run_id }}
+
+on:
+  push:
+    branches: [main, 'feature/**']
+    paths: ['b2-govern/**', '.github/workflows/b2-govern.yml']
+  schedule:
+    - cron: '7,37 * * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: b2-govern-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Synthetic build
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "b2-govern build: event=$GITHUB_EVENT_NAME ref=$GITHUB_REF_NAME run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT armed=${{ vars.B2_GOVERN_ARMED }}"
+          sleep 30
+  deploy-test:
+    needs: build
+    if: ${{ vars.B2_GOVERN_ARMED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: b2-govern-test
+    steps:
+      - name: Synthetic deployment evidence
+        shell: bash
+        env:
+          MODE: ${{ vars.B2_GOVERN_TEST_MODE }}
+        run: |
+          set -euo pipefail
+          sleep 15
+          if [ "$MODE" = "fail" ]; then echo "B2_GOVERN_TEST_MODE=fail: synthetic deployment failure"; exit 1; fi
+          echo "b2-govern synthetic deployment to b2-govern-test recorded; no application deployed"

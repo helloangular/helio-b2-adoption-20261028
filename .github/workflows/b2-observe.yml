@@ -1,0 +1,56 @@
+# B2 (qa227, 28 Oct 2026): GitHub-started run fixture for Observe-only adoption.
+#
+# Fires on push (main, feature/**, excluded/**), on a 15-minute schedule, on pull requests and on manual
+# workflow_dispatch. Only push and schedule runs on policy branches are eligible for adoption; the other
+# events exist to produce the refused candidates of TC-221/TC-298 (event_not_allowed, branch_not_matched).
+# The schedule is seeded early because GitHub may not fire a brand-new cron for an hour or more.
+# The test job targets the b2-observe-test environment, which has NO required reviewers, so every run
+# completes on its own and Observe only records GitHub's own outcome. Nothing is deployed.
+name: b2-observe
+run-name: b2-observe ${{ github.event_name }} ${{ github.ref_name }} ${{ github.run_id }}
+
+on:
+  push:
+    branches: [main, 'feature/**', 'excluded/**']
+    paths: ['b2-observe/**', '.github/workflows/b2-observe.yml']
+  schedule:
+    - cron: '*/15 * * * *'
+  pull_request:
+    paths: ['b2-observe/**']
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b2-observe-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Synthetic build
+        shell: bash
+        env:
+          SLEEP_SECONDS: ${{ vars.B2_OBSERVE_BUILD_SLEEP || '45' }}
+        run: |
+          set -euo pipefail
+          echo "b2-observe build: event=$GITHUB_EVENT_NAME ref=$GITHUB_REF_NAME run=$GITHUB_RUN_ID attempt=$GITHUB_RUN_ATTEMPT"
+          sleep "$SLEEP_SECONDS"
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: b2-observe-test
+    steps:
+      - name: Synthetic test
+        shell: bash
+        env:
+          MODE: ${{ vars.B2_OBSERVE_TEST_MODE }}
+        run: |
+          set -euo pipefail
+          sleep 20
+          if [ "$MODE" = "fail" ]; then echo "B2_OBSERVE_TEST_MODE=fail: synthetic test failure"; exit 1; fi
+          echo "b2-observe synthetic tests passed"
