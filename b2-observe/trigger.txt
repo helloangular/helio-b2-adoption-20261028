@@ -1,7 +1,2 @@
 B2 trigger file for b2-observe. Each commit here fires only that workflow.
 seed 0
-2026-10-29T15:08:02.410859+00:00 TC-222 adopted-observe push
-2026-10-29T15:25:09.274399+00:00 TC-222 adopted-observe push
-2026-10-29T18:47:04.679411+00:00 TC-298 counted observe-origin push
-2026-10-29T19:05:33.422115+00:00 TC-298 counted run that predates the policy
-2026-10-29T19:11:40.148382+00:00 TC-222 adopted-observe push
