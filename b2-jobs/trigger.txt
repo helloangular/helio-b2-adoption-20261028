@@ -5,3 +5,4 @@ seed 0
 2026-10-29T15:08:23.910456+00:00 TC-223 same-run-optional-skip push
 2026-10-29T15:15:09.722175+00:00 TC-223 required-deploy-skip push
 2026-10-29T15:25:47.275844+00:00 TC-223 missing-proof push
+2026-10-29T15:39:17.970951+00:00 TC-223 mismatched-proof push
