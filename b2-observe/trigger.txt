@@ -7,3 +7,4 @@ seed 0
 2026-10-29T02:15:36.589483+00:00 TC-220 counted observe push on main
 2026-10-29T02:23:44.337355+00:00 TC-220 counted push while policy disabled
 2026-10-29T02:45:38.707071+00:00 TC-298 counted observe-origin push
+2026-10-29T03:08:05.511633+00:00 TC-298 counted run that predates the policy
