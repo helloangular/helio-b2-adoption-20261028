@@ -1,3 +1,4 @@
 B2 trigger file for b2-observe. Each commit here fires only that workflow.
 seed 0
 2026-10-29T01:03:11.137556+00:00 TC-220 counted observe push on main
+2026-10-29T01:11:22.963455+00:00 TC-220 counted push while policy disabled
