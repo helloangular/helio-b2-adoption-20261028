@@ -5,3 +5,4 @@ seed 0
 2026-10-29T01:44:08.001194+00:00 TC-220 counted observe push on main
 2026-10-29T01:54:22.275033+00:00 TC-220 counted push while policy disabled
 2026-10-29T02:15:36.589483+00:00 TC-220 counted observe push on main
+2026-10-29T02:22:11.705878+00:00 TC-220 counted push on excluded branch
