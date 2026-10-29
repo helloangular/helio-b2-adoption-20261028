@@ -2,3 +2,4 @@ B2 trigger file for b2-govern. Each commit here fires only that workflow.
 seed 0
 2026-10-29T15:12:23.684088+00:00 TC-222 adopted-governed push
 2026-10-29T15:29:37.462552+00:00 TC-222 adopted-governed push
+2026-10-29T18:53:47.599557+00:00 TC-298 counted governed-origin push
