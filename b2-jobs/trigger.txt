@@ -2,3 +2,4 @@ B2 trigger file for b2-jobs (TC-223).
 seed 0
 2026-10-29T14:54:31.494633+00:00 TC-223 successful-control push
 2026-10-29T15:03:39.260710+00:00 TC-223 successful-control push
+2026-10-29T15:08:23.910456+00:00 TC-223 same-run-optional-skip push
