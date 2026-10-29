@@ -29,6 +29,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Declares the pinned target in the caller too (onboarding requires the target on a job or the
+    # environment input); the deployment itself still happens in the reusable body below.
+    environment: b2-reusable-test
     steps:
       - shell: bash
         run: |
