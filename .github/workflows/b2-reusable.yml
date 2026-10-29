@@ -13,8 +13,8 @@ on:
       environment:
         type: choice
         required: false
-        default: b2-observe-test
-        options: [b2-observe-test]
+        default: b2-reusable-test
+        options: [b2-reusable-test]
       helio_execution_id:
         type: string
         required: false
@@ -39,4 +39,4 @@ jobs:
     needs: build
     uses: ./.github/workflows/b2-reusable-body.yml
     with:
-      target: b2-observe-test
+      target: b2-reusable-test

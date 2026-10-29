@@ -13,8 +13,8 @@ on:
       environment:
         type: choice
         required: false
-        default: b2-observe-test
-        options: [b2-observe-test]
+        default: b2-matrix-test
+        options: [b2-matrix-test]
       helio_execution_id:
         type: string
         required: false
@@ -32,7 +32,7 @@ jobs:
         region: [east, west]
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment: b2-observe-test
+    environment: b2-matrix-test
     steps:
       - name: Synthetic matrix deployment (${{ matrix.region }})
         shell: bash
