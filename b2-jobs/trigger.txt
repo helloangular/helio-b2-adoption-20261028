@@ -1,0 +1,2 @@
+B2 trigger file for b2-jobs (TC-223).
+seed 0
