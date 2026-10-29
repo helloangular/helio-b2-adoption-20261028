@@ -3,3 +3,4 @@ seed 0
 2026-10-29T15:08:02.410859+00:00 TC-222 adopted-observe push
 2026-10-29T15:25:09.274399+00:00 TC-222 adopted-observe push
 2026-10-29T18:47:04.679411+00:00 TC-298 counted observe-origin push
+2026-10-29T19:03:29.249198+00:00 TC-298 counted other-branch push
