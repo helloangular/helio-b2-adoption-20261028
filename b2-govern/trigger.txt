@@ -2,3 +2,4 @@ B2 trigger file for b2-govern. Each commit here fires only that workflow.
 seed 0
 2026-10-28T23:42:50.691830+00:00 B2 rehearsal-adoption-01 governed push on main
 2026-10-29T00:27:27.646602+00:00 B2 rehearsal-adoption-02 governed push on main
+2026-10-29T00:36:07.961313+00:00 B2 rehearsal-adoption-02 push under misconfigured policy
