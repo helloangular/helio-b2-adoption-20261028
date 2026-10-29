@@ -21,4 +21,4 @@ jobs:
         run: |
           set -euo pipefail
           echo "b2-reusable-body deploy to ${{ inputs.target }}"
-          sleep 10
+          sleep "${{ vars.B2_TOPOLOGY_SLEEP || 10 }}"

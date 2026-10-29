@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           echo "b2-reusable build"
-          sleep 10
+          sleep "${{ vars.B2_TOPOLOGY_SLEEP || 10 }}"
   deploy:
     needs: build
     uses: ./.github/workflows/b2-reusable-body.yml
