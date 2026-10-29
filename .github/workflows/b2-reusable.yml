@@ -40,7 +40,8 @@ jobs:
           sleep "${{ vars.B2_TOPOLOGY_SLEEP || 10 }}"
   deploy:
     needs: build
-    # Cross-repository reusable workflow (unsupported for ordinary adoption); a same-repository body is supported.
-    uses: helloangular/helio-b2-catalog-20261028/.github/workflows/b2-remote-body.yml@0484ed8204c87c0dd8aa09e38fe0cdc0e66d1d0b
+    # Same-repository reusable body whose environment job is a matrix (the unsupported reusable shape, as in GH-48).
+    # Plain same-repository and SHA-pinned cross-repository bodies are supported and are adopted (B2-HF-04).
+    uses: ./.github/workflows/b2-reusable-body.yml
     with:
       target: b2-reusable-test

@@ -13,6 +13,9 @@ permissions:
 
 jobs:
   deploy:
+    strategy:
+      matrix:
+        part: [one, two]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: ${{ inputs.target }}
