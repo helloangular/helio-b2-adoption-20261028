@@ -3,8 +3,8 @@
 # GitHub-started by a push to b2-jobs/**. Repository variables select the variant without a commit:
 #   B2_JOBS_LINT=skip            declared NON-deployment job `lint` is skipped          (same-run-optional-skip)
 #   B2_JOBS_DEPLOY=skip          the required deployment job `deploy` is skipped       (required-deploy-skip)
-#   B2_JOBS_EXTRA=run            an extra job runs under a runtime name that differs from its declared name
-#                                (`extra-${{ github.run_id }}`), i.e. a job Helio's pinned graph does not declare (undeclared-job)
+#   (undeclared-job is not built: a job name with an expression makes Helio refuse the whole workflow as
+#    adoption_workflow_unsupported, and GitHub runs exactly the jobs of the pinned commit; see B2-HF-05)
 #   B2_JOBS_PROOF=delete         the deploy job deactivates and deletes its own GitHub deployment (missing-proof)
 #   B2_JOBS_PROOF=extra          the deploy job adds a second successful deployment for the same sha/environment
 #                                pointing at the same job log (mismatched-proof: proof is no longer unique)
@@ -48,7 +48,7 @@ jobs:
           SLEEP_SECONDS: ${{ vars.B2_JOBS_BUILD_SLEEP || '240' }}
         run: |
           set -euo pipefail
-          echo "b2-jobs build run=$GITHUB_RUN_ID lint=${{ vars.B2_JOBS_LINT }} deploy=${{ vars.B2_JOBS_DEPLOY }} extra=${{ vars.B2_JOBS_EXTRA }} proof=${{ vars.B2_JOBS_PROOF }}"
+          echo "b2-jobs build run=$GITHUB_RUN_ID lint=${{ vars.B2_JOBS_LINT }} deploy=${{ vars.B2_JOBS_DEPLOY }} proof=${{ vars.B2_JOBS_PROOF }}"
           sleep "$SLEEP_SECONDS"
 
   lint:
@@ -59,16 +59,6 @@ jobs:
     steps:
       - shell: bash
         run: echo "b2-jobs optional lint (no environment)"
-
-  extra:
-    needs: build
-    if: ${{ vars.B2_JOBS_EXTRA == 'run' }}
-    name: ${{ vars.B2_JOBS_EXTRA == 'run' && format('extra-{0}', github.run_id) || 'extra' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - shell: bash
-        run: echo "b2-jobs extra job with a runtime name"
 
   deploy:
     needs: [build, lint]
