@@ -5,7 +5,9 @@
 #   B2_JOBS_DEPLOY=skip          the required deployment job `deploy` is skipped       (required-deploy-skip)
 #   (undeclared-job is not built: a job name with an expression makes Helio refuse the whole workflow as
 #    adoption_workflow_unsupported, and GitHub runs exactly the jobs of the pinned commit; see B2-HF-05)
-#   B2_JOBS_PROOF=delete         the deploy job deactivates and deletes its own GitHub deployment (missing-proof)
+#   B2_JOBS_PROOF=delete         a later non-deployment job `strip-proof` (after deploy has finished and GitHub has written
+#                                the deployment status) deactivates and deletes the run's deployment record (missing-proof).
+#                                Deleting it inside the deploy job does not work: GitHub writes a fresh record when the job ends.
 #   B2_JOBS_PROOF=extra          the deploy job adds a second successful deployment for the same sha/environment
 #                                pointing at the same job log (mismatched-proof: proof is no longer unique)
 #   (all unset)                  successful control
@@ -76,12 +78,6 @@ jobs:
           set -euo pipefail
           api="https://api.github.com/repos/$GITHUB_REPOSITORY"
           auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json")
-          if [ "$PROOF" = "delete" ]; then
-            for id in $(curl -fsS "${auth[@]}" "$api/deployments?sha=$GITHUB_SHA&environment=b2-govern-test" | python3 -c 'import json,sys;print(" ".join(str(d["id"]) for d in json.load(sys.stdin)))'); do
-              curl -fsS -X POST "${auth[@]}" "$api/deployments/$id/statuses" --data '{"state":"inactive"}' > /dev/null
-              curl -fsS -X DELETE "${auth[@]}" "$api/deployments/$id" > /dev/null && echo "deleted deployment $id"
-            done
-          fi
           if [ "$PROOF" = "extra" ]; then
             job_url="$(curl -fsS "${auth[@]}" "$api/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" | python3 -c 'import json,sys;print([j["html_url"] for j in json.load(sys.stdin)["jobs"] if j["name"]=="deploy"][0])')"
             id="$(curl -fsS -X POST "${auth[@]}" "$api/deployments" --data "{\"ref\":\"$GITHUB_SHA\",\"environment\":\"b2-govern-test\",\"auto_merge\":false,\"required_contexts\":[],\"task\":\"b2-extra-proof\"}" | python3 -c 'import json,sys;print(json.load(sys.stdin)["id"])')"
@@ -89,3 +85,23 @@ jobs:
             echo "extra deployment $id"
           fi
           echo "b2-jobs synthetic deployment to b2-govern-test; nothing deployed"
+
+  strip-proof:
+    needs: deploy
+    if: ${{ vars.B2_JOBS_PROOF == 'delete' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Remove the run's deployment record (missing-proof fixture)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json")
+          sleep 20
+          for id in $(curl -fsS "${auth[@]}" "$api/deployments?sha=$GITHUB_SHA&environment=b2-govern-test" | python3 -c 'import json,sys;print(" ".join(str(d["id"]) for d in json.load(sys.stdin)))'); do
+            curl -fsS -X POST "${auth[@]}" "$api/deployments/$id/statuses" --data '{"state":"inactive"}' > /dev/null
+            curl -fsS -X DELETE "${auth[@]}" "$api/deployments/$id" > /dev/null && echo "deleted deployment $id"
+          done
